@@ -167,7 +167,7 @@ def evaluate(model, tokenizer, dataloader, epoch, device):
     
     
 if __name__=='__main__':
-  args = Args('/content/drive/MyDrive/Data/archive/articles1.csv',
+    args = Args('/content/drive/MyDrive/Data/archive/articles1.csv',
             '/content/drive/MyDrive/Data/archive/articles2.csv',
             2,
             0,
@@ -176,21 +176,21 @@ if __name__=='__main__':
             True,
             0,
             False)
-  
-  ##### model load #####
-  tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
-  # model = GPT2Model.from_pretrained('gpt2')
-  want_to_change_vocab = args.vocab_rev
-  pad_id = 50267 if want_to_change_vocab else tokenizer.eos_token_id
-  # lm_head.weight 	 torch.Size([50257, 768]) 추가
-  # loss func.이 내재되어 있음
-  model = GPT2LMHeadModel.from_pretrained('gpt2', pad_token_id=pad_id) 
-  
-  # 애초에 attn mask가 있기 때문에 안해도 무방
-  # 그러나 open-end generation을 피하는 한 가지 방법
-  # '<|endoftext|>': 50256
-  # 마구 추가하면 pretrain 방식과 다르기 때문에 성능을 저하시킬 수 있다
-  if want_to_change_vocab:
+
+    ##### model load #####
+    tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+    # model = GPT2Model.from_pretrained('gpt2')
+    want_to_change_vocab = args.vocab_rev
+    pad_id = 50267 if want_to_change_vocab else tokenizer.eos_token_id
+    # lm_head.weight 	 torch.Size([50257, 768]) 추가
+    # loss func.이 내재되어 있음
+    model = GPT2LMHeadModel.from_pretrained('gpt2', pad_token_id=pad_id) 
+
+    # 애초에 attn mask가 있기 때문에 안해도 무방
+    # 그러나 open-end generation을 피하는 한 가지 방법
+    # '<|endoftext|>': 50256
+    # 마구 추가하면 pretrain 방식과 다르기 때문에 성능을 저하시킬 수 있다
+    if want_to_change_vocab:
       special_tokens =  {'pad_token': '[PAD]'}
                       # 'bos_token': '<|endoftext|>', 
                       # 'additional_special_tokens': ['[SP1]', '[SP2]']}
@@ -198,62 +198,63 @@ if __name__=='__main__':
       vocab = tokenizer.get_vocab()
       # print(vocab)
       model.resize_token_embeddings(len(vocab))
-  
-  ##### dataset #####
-  dataset = NewsDataset(args.train_path, tokenizer)
-  dataloader = DataLoader(dataset,
+
+    ##### dataset #####
+    dataset = NewsDataset(args.train_path, tokenizer)
+    dataloader = DataLoader(dataset,
                           batch_size=args.batch_size,
                           num_workers=args.num_workers,
                           collate_fn=NewsCollate,
                           shuffle=args.shuffle)
-  valid_dataset = NewsDataset(args.valid_path, tokenizer)
-  valid_dataloader = DataLoader(dataset,
+    valid_dataset = NewsDataset(args.valid_path, tokenizer)
+    valid_dataloader = DataLoader(dataset,
                           batch_size=args.batch_size,
                           num_workers=args.num_workers,
                           collate_fn=NewsCollate)
-  
-  optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
-num_training_steps = args.epochs * len(dataloader)
-lr_scheduler = get_scheduler(
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+
+    num_training_steps = args.epochs * len(dataloader)
+    
+    lr_scheduler = get_scheduler(
     "linear",
     optimizer=optimizer,
     num_warmup_steps=8000,
     num_training_steps=num_training_steps
-)
+    )
 
-logger = get_logger(name='train',
+    logger = get_logger(name='train',
                     file_path=os.path.join('.', 'train_log.log'),
                     stream=True)
 
-#### START #####
-n_epoch = 0
-train_begin = time.time()
-for epoch in range(args.epochs):
-    train_loss = train(model, tokenizer, dataloader, optimizer, lr_scheduler, epoch, train_begin, args.device)
-    logger.info('Epoch %d (Training) Loss %0.8f' % (epoch, train_loss))
-    
-    valid_loss = evaluate(model, tokenizer, valid_dataloader, epoch, args.device)
-    
-    model.eval()
-    inputs = tokenizer.encode('''How serious is the presence of the Covid virus in deer for humans?"''', return_tensors='pt')
-    sample_outputs = model.generate(
-                            bos_token_id=inputs,
-                            do_sample=True,   
-                            top_k=50, 
-                            max_length = 100,
-                            top_p=0.90, 
-                            num_return_sequences=3
-                        )
-    
-    print("Output:\n" + 100 * '-')
-    for i, sample_output in enumerate(sample_outputs):
-        print("{}: {}".format(i, tokenizer.decode(sample_output, skip_special_tokens=True)))
-    
-    # make_directory('checkpoint')
-    save(os.path.join('checkpoint', f"model_{epoch:03d}.pt"), model, optimizer, logger)
+    #### START #####
+    n_epoch = 0
+    train_begin = time.time()
+    for epoch in range(args.epochs):
+        train_loss = train(model, tokenizer, dataloader, optimizer, lr_scheduler, epoch, train_begin, args.device)
+        logger.info('Epoch %d (Training) Loss %0.8f' % (epoch, train_loss))
 
-    epoch_end_time = time.time()
-    n_epoch += 1
-    print(f'For {(epoch_end_time - epoch_start_time)/60:6.2f}, {n_epoch} Epoch Finished')
-  
+        valid_loss = evaluate(model, tokenizer, valid_dataloader, epoch, args.device)
+
+        model.eval()
+        inputs = tokenizer.encode('''How serious is the presence of the Covid virus in deer for humans?"''', return_tensors='pt')
+        sample_outputs = model.generate(
+                                bos_token_id=inputs,
+                                do_sample=True,   
+                                top_k=50, 
+                                max_length = 100,
+                                top_p=0.90, 
+                                num_return_sequences=3
+                            )
+
+        print("Output:\n" + 100 * '-')
+        for i, sample_output in enumerate(sample_outputs):
+            print("{}: {}".format(i, tokenizer.decode(sample_output, skip_special_tokens=True)))
+
+        # make_directory('checkpoint')
+        save(os.path.join('checkpoint', f"model_{epoch:03d}.pt"), model, optimizer, logger)
+
+        epoch_end_time = time.time()
+        n_epoch += 1
+        print(f'For {(epoch_end_time - epoch_start_time)/60:6.2f}, {n_epoch} Epoch Finished')
+
