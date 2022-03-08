@@ -191,13 +191,13 @@ if __name__=='__main__':
     # '<|endoftext|>': 50256
     # 마구 추가하면 pretrain 방식과 다르기 때문에 성능을 저하시킬 수 있다
     if want_to_change_vocab:
-      special_tokens =  {'pad_token': '[PAD]'}
+        special_tokens =  {'pad_token': '[PAD]'}
                       # 'bos_token': '<|endoftext|>', 
                       # 'additional_special_tokens': ['[SP1]', '[SP2]']}
-      tokenizer.add_special_tokens(special_tokens)
-      vocab = tokenizer.get_vocab()
-      # print(vocab)
-      model.resize_token_embeddings(len(vocab))
+        tokenizer.add_special_tokens(special_tokens)
+        vocab = tokenizer.get_vocab()
+        # print(vocab)
+        model.resize_token_embeddings(len(vocab))
 
     ##### dataset #####
     dataset = NewsDataset(args.train_path, tokenizer)
