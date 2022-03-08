@@ -237,19 +237,24 @@ if __name__=='__main__':
         valid_loss = evaluate(model, tokenizer, valid_dataloader, epoch, args.device)
 
         model.eval()
-        inputs = tokenizer.encode('''How serious is the presence of the Covid virus in deer for humans?"''', return_tensors='pt')
-        sample_outputs = model.generate(
-                                bos_token_id=inputs,
-                                do_sample=True,   
-                                top_k=50, 
-                                max_length = 100,
-                                top_p=0.90, 
-                                num_return_sequences=3
-                            )
+        input_1 = tokenizer.encode('''How serious is the presence of the Covid virus in deer for humans?"''', return_tensors='pt')
+        input_2 = tokenizer.encode('''Joe Biden is the best president to ever ''', return_tensors='pt')
+        input_3 = tokenizer.encode('''Donald trump and his polices ''', return_tensors='pt')
+        input_4 = tokenizer.encode('''Seldom has such an amateur armchair diagnosis been so easy as when ex-President Donald Trump and the Fox News switchboard reconnected on Wednesday for a conversation about Trump's tax returns.''', return_tensors='pt')
 
-        print("Output:\n" + 100 * '-')
-        for i, sample_output in enumerate(sample_outputs):
-            print("{}: {}".format(i, tokenizer.decode(sample_output, skip_special_tokens=True)))
+        logger.info(f"{epoch} epc Output:\n" + 55 * '-')
+        for sample in [input_1, input_2, input_3, input_4]:
+            sample_inputs = model.generate(
+                        sample.to(args.device),
+                        do_sample=True,
+                        top_k=50,
+                        max_length = 120,
+                        top_p=0.90,
+                        num_return_sequences=3)
+            for sample_output in sample_inputs:
+                texts = tokenizer.decode(sample_output, skip_special_tokens=True)
+
+                logger.info('Epoch %d (Prompt-Generation) | %s' % (epoch, texts))
 
         # make_directory('checkpoint')
         save(os.path.join('checkpoint', f"model_{epoch:03d}.pt"), model, optimizer, logger)
