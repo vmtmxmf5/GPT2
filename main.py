@@ -185,7 +185,7 @@ if __name__=='__main__':
     # lm_head.weight 	 torch.Size([50257, 768]) 추가
     # loss func.이 내재되어 있음
     model = GPT2LMHeadModel.from_pretrained('gpt2', pad_token_id=pad_id) 
-
+    model.to(args.device)
     # 애초에 attn mask가 있기 때문에 안해도 무방
     # 그러나 open-end generation을 피하는 한 가지 방법
     # '<|endoftext|>': 50256
