@@ -227,6 +227,7 @@ logger = get_logger(name='train',
                     stream=True)
 
 #### START #####
+n_epoch = 0
 train_begin = time.time()
 for epoch in range(args.epochs):
     train_loss = train(model, tokenizer, dataloader, optimizer, lr_scheduler, epoch, train_begin, args.device)
@@ -244,8 +245,15 @@ for epoch in range(args.epochs):
                             top_p=0.90, 
                             num_return_sequences=3
                         )
-
+    
     print("Output:\n" + 100 * '-')
     for i, sample_output in enumerate(sample_outputs):
         print("{}: {}".format(i, tokenizer.decode(sample_output, skip_special_tokens=True)))
+    
+    # make_directory('checkpoint')
+    save(os.path.join('checkpoint', f"model_{epoch:03d}.pt"), model, optimizer, logger)
+
+    epoch_end_time = time.time()
+    n_epoch += 1
+    print(f'For {(epoch_end_time - epoch_start_time)/60:6.2f}, {n_epoch} Epoch Finished')
   
